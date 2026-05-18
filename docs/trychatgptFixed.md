@@ -84,6 +84,136 @@
 - Пароли — хранятся в виде хеша (например, bcrypt)
 - Чеки сохраняются как файлы и в базе, доступны для скачивания
 
+# Таблица `users`
+Хранит информацию о зарегистрированных пользователях и их ролях.
+
+| Поле             | Тип               | Ограничения                   | Описание                                    |
+|------------------|-------------------|------------------------------|---------------------------------------------|
+| `id`             | INT UNSIGNED     | PRIMARY KEY, AUTO_INCREMENT | Уникальный ID пользователя                  |
+| `login`          | VARCHAR(50)      | UNIQUE, NOT NULL             | Логин для входа                            |
+| `password_hash`  | VARCHAR(255)     | NOT NULL                     | Хэш пароля (например, bcrypt)              |
+| `role`           | ENUM('user','support') | NOT NULL                 | Роль пользователя                           |
+| `nickname`       | VARCHAR(30)      | UNIQUE, DEFAULT NULL         | Майнкрафт никнейм (может быть пустым)     |
+| `created_at`     | TIMESTAMP        | DEFAULT CURRENT_TIMESTAMP    | Время регистрации                          |
+
+Обратите внимание: Никнейм должен быть уникальным и проверяться при изменении или регистрации.
+
+---
+
+# Таблица `wallets`
+Хранит баланс и историю пополнений каждого пользователя.
+
+| Поле             | Тип               | Ограничения                   | Описание                                 |
+|------------------|-------------------|------------------------------|------------------------------------------|
+| `id`             | INT UNSIGNED     | PRIMARY KEY, AUTO_INCREMENT | Идентификатор записи                     |
+| `user_id`        | INT UNSIGNED     | FOREIGN KEY к `users(id)`    | Владелец кошелька                        |
+| `balance`        | DECIMAL(10,2)    | NOT NULL DEFAULT 0.00        | Текущий баланс                          |
+| `last_updated`   | TIMESTAMP        | DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP | Последнее обновление баланса  |
+
+---
+
+# Таблица `purchases`
+Записывает все покупки проходок и донатов.
+
+| Поле             | Тип               | Ограничения                   | Описание                              |
+|------------------|-------------------|------------------------------|---------------------------------------|
+| `id`             | INT UNSIGNED     | PRIMARY KEY, AUTO_INCREMENT | ID покупки                            |
+| `user_id`        | INT UNSIGNED     | FOREIGN KEY к `users(id)`    | Пользователь                        |
+| `server_id`      | INT UNSIGNED     | FOREIGN KEY к `servers(id)`  | Сервер, связанный с покупкой       |
+| `type`           | VARCHAR(50)      | NOT NULL                     | Тип покупки (проходка, донат и т.д.) |
+| `amount`         | DECIMAL(10,2)    | NOT NULL                     | Стоимость покупки                     |
+| `date`           | DATETIME         | DEFAULT CURRENT_TIMESTAMP    | Время покупки                        |
+| `details`        | TEXT             | NULL                         | Дополнительные сведения             |
+
+---
+
+# Таблица `receipts`
+Хранит чеки и путь к файлам.
+
+| Поле             | Тип               | Ограничения                   | Описание                                  |
+|------------------|-------------------|------------------------------|-------------------------------------------|
+| `uuid`           | VARCHAR(36)      | PRIMARY KEY                  | Уникальный UUID чека                     |
+| `user_id`        | INT UNSIGNED     | FOREIGN KEY к `users(id)`    | Владелец чека                           |
+| `purchase_id`    | INT UNSIGNED     | FOREIGN KEY к `purchases(id)`| Связь с покупкой                        |
+| `file_path`      | VARCHAR(255)     | NOT NULL                     | Путь к файлу-чеку                        |
+| `issue_date`     | DATETIME         | DEFAULT CURRENT_TIMESTAMP    | Дата создания                            |
+
+---
+
+# Таблица `servers`
+Информация о игровых серверах.
+
+| Поле             | Тип               | Ограничения                   | Описание                               |
+|------------------|-------------------|------------------------------|----------------------------------------|
+| `id`             | INT UNSIGNED     | PRIMARY KEY, AUTO_INCREMENT | Идентификатор сервера                  |
+| `name`           | VARCHAR(100)     | UNIQUE, NOT NULL             | Название                               |
+| `description`    | TEXT             | NULL                         | Описание сервера                       |
+| `rules`          | TEXT             | NULL                         | Правила сервера                        |
+| `donate_link`    | VARCHAR(255)     | NULL                         | Ссылка для донатов                     |
+| `category`       | VARCHAR(50)      | NULL                         | Категория сервера                      |
+
+---
+
+# Таблица `donations`
+Детали донатов.
+
+| Поле             | Тип               | Ограничения                   | Описание                             |
+|------------------|-------------------|------------------------------|-------------------------------------|
+| `id`             | INT UNSIGNED     | PRIMARY KEY, AUTO_INCREMENT | ID доната                          |
+| `user_id`        | INT UNSIGNED     | FOREIGN KEY к `users(id)`    | Пользователь                       |
+| `server_id`      | INT UNSIGNED     | FOREIGN KEY к `servers(id)`  | Сервер                            |
+| `amount`         | DECIMAL(10,2)    | NOT NULL                     | Сумма                          |
+| `date`           | DATETIME         | DEFAULT CURRENT_TIMESTAMP    | Время покупки                     |
+| `details`        | TEXT             | NULL                         | Детали доната                     |
+
+---
+
+# Таблица `stats`
+Для хранения статистики по серверу и пользователю.
+
+| Поле             | Тип               | Ограничения                   | Описание                                       |
+|------------------|-------------------|------------------------------|------------------------------------------------|
+| `id`             | INT UNSIGNED     | PRIMARY KEY, AUTO_INCREMENT | Идентификатор                                   |
+| `user_id`        | INT UNSIGNED     | FOREIGN KEY к `users(id)`    | Пользователь                                   |
+| `server_id`      | INT UNSIGNED     | FOREIGN KEY к `servers(id)`  | Сервер                                         |
+| `total_play_time`| INT              | NULL                         | Общее время игры в минутах                     |
+| `last_active`    | DATETIME         | NULL                         | Последняя активность                          |
+
+---
+
+### Взаимосвязи между таблицами
+- **`users`** связана с:
+  - `wallets` — один к одному
+  - `purchases` — один ко многим
+  - `receipts` — один ко многим
+  - `donations` — один ко многим
+  - `stats` — один ко многим
+
+- **`purchases`** связана с:
+  - `users`
+  - `servers`
+  - `receipts`
+
+- **`receipts`** связана с:
+  - `users`
+  - `purchases`
+
+- **`donations`** связана с:
+  - `users`
+  - `servers`
+
+- **`stats`** связана с:
+  - `users`
+  - `servers`
+
+---
+
+Это структура базы данных, которая покрывает все описанные в ТЗ сценарии. В дальнейшем по необходимости можно добавлять дополнительные таблицы или поля для расширения функционала.
+
+---
+
+Если вам нужно — могу подготовить SQL-запросы для создания перечисленных таблиц.
+
 ---
 
 ### 3. Серверная часть (на Go)
