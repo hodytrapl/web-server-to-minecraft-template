@@ -1,0 +1,4 @@
+-дизайн на Figma
+-backend на golang
+-frontend на html\js\css
+-bots на python, реализация в дискорде
