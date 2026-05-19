@@ -101,14 +101,14 @@
 | `issue_date` | DATETIME | DEFAULT CURRENT_TIMESTAMP |
 
 **Таблица `support_tickets`** (упрощённая)  
-| Поле | Тип |
-|------|-----|
-| `id` INT UNSIGNED PRIMARY KEY AUTO_INCREMENT | |
-| `user_id` INT UNSIGNED FOREIGN KEY (`users.id`) | |
-| `topic` VARCHAR(100) NOT NULL | |
-| `message` TEXT NOT NULL | |
-| `status` VARCHAR(20) DEFAULT 'open' | |
-| `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP | |
+| Поле | Тип | Ограничения |
+|------|-----|--------------|
+| `id` | INT UNSIGNED | PRIMARY KEY AUTO_INCREMENT |
+| `user_id` | INT UNSIGNED | FOREIGN KEY (`users.id`) |
+| `topic` | VARCHAR(100) | NOT NULL |
+| `message` | TEXT | NOT NULL |
+| `status` | VARCHAR(20) | DEFAULT 'open' |
+| `created_at` | DATETIME | DEFAULT CURRENT_TIMESTAMP |
 
 #### 2.2.2. База данных игровая – `game_db`
 
